@@ -55,7 +55,9 @@ const Portfolio = () => {
     let net = 0;
     purchasedStocks.forEach(stock => {
       const stockInfo = stocks.find(s => s.symbol === stock.symbol);
-      net += (stockInfo.price - stock.purchasePrice) * stock.shares;
+      if(stockInfo!=undefined){
+        net += (stockInfo.price - stock.purchasePrice) * stock.shares;
+      }
     });
     setNetProfitLoss(net);
     
@@ -76,12 +78,12 @@ const Portfolio = () => {
     if (!selectedStock || !shares) {
       return;
     }
-    let r = lastId+1;
+    let r = lastId + 1;
     setLastId(lastId+1);
     const newStock = {
       id: r,
       symbol: selectedStock,
-      shares: parseInt(shares),
+      shares: shares, 
       purchasePrice: stocks.find(s => s.symbol === selectedStock).price,
       purchaseDate: new Date().toISOString().substring(0, 10)
     };
@@ -98,7 +100,7 @@ const Portfolio = () => {
         stock => stock.id !== stockToSell.id
       )
     );
-    let lossEarn = (stockToSell.purchasePrice - stocks.find(s => s.symbol === stockToSell.symbol).price) * stockToSell.shares;
+    let lossEarn = (stocks.find(s => s.symbol === stockToSell.symbol).price-stockToSell.purchasePrice ) * stockToSell.shares;
     updatePastProfitLoss(lossEarn);
     updateNetProfitLoss();
 
