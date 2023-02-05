@@ -11,18 +11,18 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import TableHead from '@mui/material/TableHead';
 import AppBar from '@mui/material/AppBar';
+import Toolbar from '@mui/material/Toolbar';
 import InputLabel from '@mui/material/InputLabel';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import FormControl from '@mui/material/FormControl';
+import Container from '@mui/material/Container';
+import Grid from '@mui/material/Grid';
+import Box from '@mui/material/Box';
 import FormHelperText from '@mui/material/FormHelperText';
 const darkTheme = createTheme({
   palette: {
     mode: 'dark',
   },
-});
-
-const ThemeTable = styled('table')({
-      minWidth: 650,
 });
 const stocks = [
   { symbol: 'AAPL', name: 'Apple Inc.', price: 140.32 },
@@ -35,6 +35,7 @@ const stocks = [
   { symbol: 'JNJ', name: 'Johnson & Johnson', price: 160.30 },
   { symbol: 'JPM', name: 'JPMorgan Chase & Co.', price: 157.47 },
   ];
+
 const Portfolio = () => {
   
   const [selectedStock, setSelectedStock] = useState(null);
@@ -108,31 +109,41 @@ const Portfolio = () => {
 
   return (
     <ThemeProvider theme={darkTheme}>
-<div style={{padding: 20 }}>
-<Typography variant="h2">Investment Simulation</Typography>
+      <AppBar position="static">
+      <Toolbar>
+        <Typography variant="h6">Group-19 Stock Tracking</Typography>
+        <Button color="inherit">Stock News</Button>
+        <Button color="inherit">Stock Simulation</Button>
+      </Toolbar>
+    </AppBar>
+<Grid justifyContent="center" style={{ textAlign: 'center' }}>
+  <Container style={{padding: 20 }}>
+  <Typography align = "center" variant="h2" >Investment Simulation</Typography>
+  <div>
+    <Typography variant="h3">Past Profit/Loss: <span style={{ color: pastProfitLoss > 0 ? 'green' : pastProfitLoss < 0 ? 'red' : 'white' }}>${pastProfitLoss.toFixed(2)}</span></Typography>
+  </div>
+  <div>
+    <Typography variant="h3">Net Profit/Loss: <span style={{ color: netProfitLoss > 0 ? 'green' : netProfitLoss < 0 ? 'red' : 'white' }}>${netProfitLoss.toFixed(2)}</span></Typography>
+  </div>
+  </Container>
+</Grid>
+
+
 <div>
-  <Typography variant="h3">Past Profit/Loss: <span style={{ color: pastProfitLoss > 0 ? 'red' : pastProfitLoss < 0 ? 'green' : 'white' }}>${pastProfitLoss.toFixed(2)}</span></Typography>
-</div>
-<div>
-  <Typography variant="h3">Net Profit/Loss: <span style={{ color: netProfitLoss > 0 ? 'red' : netProfitLoss < 0 ? 'green' : 'white' }}>${netProfitLoss.toFixed(2)}</span></Typography>
-</div>
+    <Box >
 
-</div>
-
-
-    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop:50}}>
-      <AppBar></AppBar>
-      <Table sx={{border:1}}>
+    <Box >
+      <Table sx={{border:1}} >
         <TableHead>
         <TableRow>
-            <TableCell>ID</TableCell>
+            <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>ID</TableCell>
             <TableCell>Symbol</TableCell>
-            <TableCell>Company</TableCell>
+            <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Company</TableCell>
             <TableCell>Shares</TableCell>
-            <TableCell>Purchase Price</TableCell>
-            <TableCell>Current Price</TableCell>
+            <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Purchase Price</TableCell>
+            <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Current Price</TableCell>
             <TableCell>Profit/Loss</TableCell>
-            <TableCell>Purchase Date</TableCell>
+            <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Purchase Date</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -140,14 +151,14 @@ const Portfolio = () => {
             const stockInfo = stocks.find(s => s.symbol === stock.symbol);
             return (
               <TableRow key={stock.symbol}>
-                <TableCell>{stock.id}</TableCell>
-                <TableCell>{stock.symbol}</TableCell>
-                <TableCell>{stockInfo.name}</TableCell>
-                <TableCell>{stock.shares}</TableCell>
-                <TableCell>${stock.purchasePrice}</TableCell>
-                <TableCell>${stockInfo.price}</TableCell>
-                <TableCell>${(stockInfo.price - stock.purchasePrice) * stock.shares}</TableCell>
-                <TableCell>{stock.purchaseDate}</TableCell>
+                <TableCell 	sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{stock.id}</TableCell>
+                <TableCell >{stock.symbol}</TableCell>
+                <TableCell 	sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{stockInfo.name}</TableCell>
+                <TableCell >{stock.shares}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>${stock.purchasePrice}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>${stockInfo.price}</TableCell>
+                <TableCell>${((stockInfo.price - stock.purchasePrice) * stock.shares).toFixed(2)}</TableCell>
+                <TableCell 	sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{stock.purchaseDate}</TableCell>
                 <TableCell>
                   <Button onClick={() => handleStockSell(stock)}>
                   Sell
@@ -158,41 +169,44 @@ const Portfolio = () => {
           })}
         </TableBody>
       </Table>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop:50}}>
-      <FormControl sx={{ m: 1 }} variant="outlined">
-        <InputLabel id="demo-simple-select-label">Stock name</InputLabel>
-        <Select 
-          value={selectedStock} 
-          onChange={handleStockSelection} 
-          label="Stock name"
-        >
-          {stocks.map(stock => (
-            <MenuItem key={stock.symbol} value={stock.symbol}>
-              {stock.name}
-            </MenuItem>
-          ))}
-        </Select>
-        <br />
-        <br />
-        <TextField
-          label="Shares"
-          type="number"
-          value={shares}
-          onChange={handleSharesChange}
-          variant="outlined"
-        />
-        <br />
-        <br />
-        <Button 
-          variant="contained" 
-          color="primary" 
-          onClick={handleStockPurchase}
-        >
-          Purchase
-        </Button>
-      </FormControl>
-      </div>
- 
+      </Box>
+      </Box>
+      <Grid justifyContent="center" style={{ textAlign: 'center' }}>
+      <div>
+        <FormControl sx={{ m: 1 }} variant="outlined">
+          <InputLabel id="">Stock name</InputLabel>
+          <Select 
+            value={selectedStock} 
+            onChange={handleStockSelection} 
+            label="Stock name"
+          >
+            {stocks.map(stock => (
+              <MenuItem key={stock.symbol} value={stock.symbol}>
+                {stock.name}
+              </MenuItem>
+            ))}
+          </Select>
+          <br />
+          <br />
+          <TextField
+            label="Shares"
+            type="number"
+            value={shares}
+            onChange={handleSharesChange}
+            variant="outlined"
+          />
+          <br />
+          <br />
+          <Button 
+            variant="contained" 
+            color="primary" 
+            onClick={handleStockPurchase}
+          >
+            Purchase
+          </Button>
+        </FormControl>
+        </div>
+    </Grid>
       </div>
       </ThemeProvider>
 );
