@@ -18,7 +18,13 @@ import FormControl from '@mui/material/FormControl';
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
 import Box from '@mui/material/Box';
-import FormHelperText from '@mui/material/FormHelperText';
+import NavBar from './AppBar';
+
+
+
+
+
+
 const darkTheme = createTheme({
   palette: {
     mode: 'dark',
@@ -109,13 +115,9 @@ const Portfolio = () => {
 
   return (
     <ThemeProvider theme={darkTheme}>
-      <AppBar position="static">
-      <Toolbar>
-        <Typography variant="h6">Group-19 Stock Tracking</Typography>
-        <Button color="inherit">Stock News</Button>
-        <Button color="inherit">Stock Simulation</Button>
-      </Toolbar>
-    </AppBar>
+  
+    <NavBar />
+ 
 <Grid justifyContent="center" style={{ textAlign: 'center' }}>
   <Container style={{padding: 20 }}>
   <Typography align = "center" variant="h2" >Investment Simulation</Typography>
