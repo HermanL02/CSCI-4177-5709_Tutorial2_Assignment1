@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect} from 'react';
 import { styled } from '@mui/system';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -30,10 +30,11 @@ const darkTheme = createTheme({
     mode: 'dark',
   },
 });
+const owner_id = "user1";
 const stocks = [
   { symbol: 'AAPL', name: 'Apple Inc.', price: 140.32 },
   { symbol: 'GOOG', name: 'Alphabet Inc.', price: 2223.54 },
-  { symbol: 'TSLA', name: 'Tesla, Inc.', price: 801.83 },
+  { symbol: 'TSL', name: 'Tesla, Inc.', price: 801.83 },
   { symbol: 'AMZN', name: 'Amazon.com, Inc.', price: 3113.86 },
   { symbol: 'MSFT', name: 'Microsoft Corporation', price: 232.91 },
   { symbol: 'FB', name: 'Facebook, Inc.', price: 270.31 },
@@ -43,21 +44,44 @@ const stocks = [
   ];
 
 const Portfolio = () => {
-  
+ //const [stocks, setStocks] = useState([]);
   const [selectedStock, setSelectedStock] = useState(null);
   const [shares, setShares] = useState(0);
   const [lastId,setLastId] = useState(6);
-  const [purchasedStocks, setPurchasedStocks] = useState([
-    { id: 1, symbol: 'AAPL', shares: 5, purchasePrice: 130.00, purchaseDate: '2022-01-01' },
-    { id: 2, symbol: 'TSLA', shares: 2, purchasePrice: 700.00, purchaseDate: '2022-01-02' },
-    { id: 3, symbol: 'GOOG', shares: 10, purchasePrice: 2000.00, purchaseDate: '2022-01-03' },
-    { id: 4, symbol: 'AMZN', shares: 7, purchasePrice: 2800.00, purchaseDate: '2022-01-04' },
-    { id: 5, symbol: 'MSFT', shares: 3, purchasePrice: 220.00, purchaseDate: '2022-01-05' },
-    { id: 6, symbol: 'FB', shares: 20, purchasePrice: 220.00, purchaseDate: '2022-01-06' }
-    ]);
+  const [purchasedStocks, setPurchasedStocks] = useState([]);
   const [netProfitLoss, setNetProfitLoss] = useState(0);
   const [pastProfitLoss, setPastProfitLoss]  = useState(0);
-  
+  const [sharesToSell, setSharesToSell] = useState({});
+
+  useEffect(() => {
+    const fetchUserPortfolio = async () => {
+      const response = await fetch(`http://localhost:3000/simulation/portfolio/${owner_id}`);
+      const data = await response.json();
+      const formattedAssets = data.map(asset => {
+        return {
+          id: asset._id,
+          symbol: asset.ticker,
+          name: asset.asset_name,
+          shares: asset.quantity,
+          purchasePrice: asset.purchase_price,
+          purchaseDate: asset.purchase_date,
+        };
+      });
+      setPurchasedStocks(formattedAssets);
+    };
+
+    const fetchPastProfitLoss = async () => {
+      // Fetch past profit/loss data
+      const response = await fetch(`http://localhost:3000/simulation/profit/${owner_id}`);
+      const data = await response.json();
+      console.log(data);
+      setPastProfitLoss(data);
+    };
+
+    fetchUserPortfolio();
+    fetchPastProfitLoss();
+
+  }, [purchasedStocks]);
   const updateNetProfitLoss = () => {
     let net = 0;
     purchasedStocks.forEach(stock => {
@@ -81,37 +105,76 @@ const Portfolio = () => {
     setShares(e.target.value);
   };
 
-  const handleStockPurchase = () => {
+  const handleStockPurchase = async () => {
     if (!selectedStock || !shares) {
       return;
     }
-    let r = lastId + 1;
-    setLastId(lastId+1);
-    const newStock = {
-      id: r,
-      symbol: selectedStock,
-      shares: shares, 
-      purchasePrice: stocks.find(s => s.symbol === selectedStock).price,
-      purchaseDate: new Date().toISOString().substring(0, 10)
+    const stockInfo = stocks.find(s => s.symbol === selectedStock);
+    const payload = {
+      owner_id: owner_id, // replace this with the actual owner_id
+      ticker: selectedStock,
+      quantity: parseInt(shares),
+      asset_type: "Stock",
+      asset_name:selectedStock,
+      purchase_price: stockInfo.price,
+      
     };
-    setPurchasedStocks([...purchasedStocks, newStock]);
-    setShares(0);
-    setSelectedStock(null);
-    updateNetProfitLoss();
+  
+    const response = await fetch('http://localhost:3000/simulation/buy', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+  
+    if (response.ok) {
+      const updatedPortfolio = await response.json();
+      setPurchasedStocks(updatedPortfolio.assets);
+      setShares(0);
+      setSelectedStock(null);
+      updateNetProfitLoss();
+    } else {
+      console.error('Error purchasing stock');
+    }
   };
   
-  const handleStockSell = stockToSell => {
-    
-    setPurchasedStocks(
-      purchasedStocks.filter(
-        stock => stock.id !== stockToSell.id
-      )
-    );
-    let lossEarn = (stocks.find(s => s.symbol === stockToSell.symbol).price-stockToSell.purchasePrice ) * stockToSell.shares;
-    updatePastProfitLoss(lossEarn);
-    updateNetProfitLoss();
-
+  
+  const handleStockSell = async (stockToSell, sharesToSell) => {
+    if (!stockToSell || !sharesToSell) {
+      console.error('Stock or shares not provided');
+      return;
+    }
+  
+    const payload = {
+      owner_id: 'user1', // replace this with the actual owner_id
+      ticker: stockToSell.symbol,
+      quantity: parseInt(sharesToSell),
+      sell_price: stocks.find((s) => s.symbol === stockToSell.symbol).price,
+      asset_id: stockToSell.id,
+    };
+  
+    console.log('Payload:', payload);
+  
+    const response = await fetch('http://localhost:3000/simulation/sell', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+  
+    if (response.ok) {
+      const updatedPortfolio = await response.json();
+      setPurchasedStocks(updatedPortfolio.assets);
+      setPastProfitLoss(updatedPortfolio.profit);      
+      updateNetProfitLoss();
+    } else {
+      console.error('Error selling stock', await response.json());
+    }
   };
+  
+  
 
   return (
     <ThemeProvider theme={darkTheme}>
@@ -150,22 +213,40 @@ const Portfolio = () => {
         </TableHead>
         <TableBody>
           {purchasedStocks.map((stock) => {
+            console.log(stock.symbol);
             const stockInfo = stocks.find(s => s.symbol === stock.symbol);
             return (
-              <TableRow key={stock.symbol}>
+              <TableRow key={stock.id}>
                 <TableCell 	sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{stock.id}</TableCell>
                 <TableCell >{stock.symbol}</TableCell>
-                <TableCell 	sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{stockInfo.name}</TableCell>
+                <TableCell 	sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{stock.purchase_price}</TableCell>
                 <TableCell >{stock.shares}</TableCell>
                 <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>${stock.purchasePrice}</TableCell>
-                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>${stockInfo.price}</TableCell>
-                <TableCell>${((stockInfo.price - stock.purchasePrice) * stock.shares).toFixed(2)}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
+                  {stockInfo ? `$${stockInfo.price}` : 'N/A'}
+                </TableCell>
+
+                <TableCell>
+                  {stockInfo
+                    ? `$${((stockInfo.price - stock.purchasePrice) * stock.shares).toFixed(2)}`
+                    : 'N/A'}
+                </TableCell>
+
                 <TableCell 	sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{stock.purchaseDate}</TableCell>
                 <TableCell>
-                  <Button onClick={() => handleStockSell(stock)}>
+                <Button onClick={() => handleStockSell(stock, sharesToSell[stock.id])}>
                   Sell
-                  </Button>
+                </Button>
+              </TableCell>
+                <TableCell>
+                  <TextField
+                    type="number"
+                    inputProps={{ min: 0, max: stock.shares }}
+                    value={sharesToSell[stock.id] || 0}
+                    onChange={(e) => setSharesToSell({ ...sharesToSell, [stock.id]: parseInt(e.target.value) })}
+                  />
                 </TableCell>
+
               </TableRow>
             );
           })}
@@ -184,7 +265,7 @@ const Portfolio = () => {
           >
             {stocks.map(stock => (
               <MenuItem key={stock.symbol} value={stock.symbol}>
-                {stock.name}
+                {stock.symbol}
               </MenuItem>
             ))}
           </Select>
